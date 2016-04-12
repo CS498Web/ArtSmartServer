@@ -91,7 +91,9 @@ usersRoute.post(function(req, res) {  //done
 	user.email = req.body.email;
 	user.pendingTasks = req.body.pendingTasks;
 	user.dateCreated = Date.now();
-
+	if(!user.pendingTasks){
+		user.pendingTasks = [];
+	}
 	user.save(function(err) {
 		if(err){
 			res.status(500);
@@ -112,8 +114,12 @@ usersRoute.options(function(req, res){  //done
 userRoute.get(function(req, res) {  //done
 	User.findById(req.params.id, function(err, user){
         if(err){ 
-            res.status(404);
-            res.json( { message: 'User not found', data: [] } );
+            res.status(500);
+            res.json( { message: 'Error finding User', data: [] } );
+        }
+        else if(!user){
+        	res.status(404);
+        	res.json( { message: 'User not found', data: [] } );
         }
         else {
             res.status(200);
@@ -150,6 +156,10 @@ userRoute.put(function(req, res) {  //done
 userRoute.delete(function(req, res) {  //done
 	User.findById(req.params.id, function(err, user){
 		if(err){
+			res.status(500);
+			res.json( { message: 'Error finding database', data: [] } );
+		}
+		else if(!user){
 			res.status(404);
 			res.json( { message: 'User not found to delete', data: [] } );
 		}
@@ -240,8 +250,10 @@ tasksRoute.options(function(req, res){  //done
 taskRoute.get(function(req, res) { //done
     Task.findById(req.params.id, function(err, task){
         if(err)
-            res.status(404).json({ message: 'Unable tocomplete request', data: [] });
-
+            res.status(500).json({ message: 'Server error', data: [] });
+        else if(!task){
+        	res.status(404).json({ message: 'Unable to complete request', data: [] });
+        }
         else
             res.status(200).json({ message: 'Completed Request', data: task });
     });
@@ -252,10 +264,13 @@ taskRoute.put(function(req, res) {  //done
     Task.findById(req.params.id, function(err, task) {
 
         if (err){
-            res.status(404);
-            res.json({ message: 'Unable to complete request', data: err });
+            res.status(500);
+            res.json({ message: 'Unable to complete request: Server Error', data: [] });
         }
-
+        if(!task){
+        	res.status(404);
+            res.json({ message: 'Task not found', data: [] });
+        }
         task.name= req.body.name;
         task.description= req.body.description || "";
         task.deadline= req.body.deadline;
@@ -267,7 +282,7 @@ taskRoute.put(function(req, res) {  //done
         task.save(function(err) {
             if (err){
                 res.status(500);
-                res.json({ message: 'Could not update task', data: err });
+                res.json({ message: 'Server Error', data: err });
             }
             else{
                 res.status(200);
@@ -282,9 +297,8 @@ taskRoute.delete(function(req, res) {
     Task.findByIdAndRemove(req.params.id, function(err) {
         if (err){
             res.status(404);
-            res.json({ message: 'Unable to delete task', data: err });
+            res.json({ message: 'Server error', data: err });
         }
-
         else{
             res.status(200);
         	res.json({ message: 'Task deleted', data:{} });
