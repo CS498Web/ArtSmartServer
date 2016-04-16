@@ -1,14 +1,14 @@
 // Get the packages we need
 var express = require('express');
 var mongoose = require('mongoose');
-//var Llama = require('./models/llama');
-var User = require('./models/user');
-var Task = require('./models/task');
 var bodyParser = require('body-parser');
 var router = express.Router();
 
+//models
+var Album = require('./models/album.js');
+
 //replace this with your Mongolab URL
-mongoose.connect('mongodb://rlarson2:buddy5694@ds019990.mlab.com:19990/cs498mp4');
+mongoose.connect('mongodb://artsmart:artsmart@ds011251.mlab.com:11251/artsmart');
 
 // Create our Express application
 var app = express();
@@ -36,12 +36,18 @@ app.use('/api', router);
 var homeRoute = router.route('/');
 
 homeRoute.get(function(req, res) {
-  res.json({ message: 'Hello World!' });
+  res.json({ message: 'ARTsmart yay' });
 });
+
+/*var testing = new Album({
+	title: "testing"
+});
+
+testing.save();*/
 
 //Llama route
 //var llamaRoute = router.route('/llamas');
-var usersRoute = router.route('/users');
+/*var usersRoute = router.route('/users');
 var tasksRoute = router.route('/tasks');
 var userRoute = router.route('/users/:id');
 var taskRoute = router.route('/tasks/:id');
@@ -304,7 +310,7 @@ taskRoute.delete(function(req, res) {
         	res.json({ message: 'Task deleted', data:{} });
         }
     });
-});
+});*/
 // llamaRoute.get(function(req, res) {
 //   res.json([{ "name": "alice", "height": 12 }, { "name": "jane", "height": 13 }]);
 // });
