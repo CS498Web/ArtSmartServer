@@ -19,7 +19,7 @@ var ArtworkSchema = new mongoose.Schema({
 	media: {
 		type: String
 	},
-	size: [{
+	actualSize: [{
 		type: String
 	}],
 	src: {
@@ -27,16 +27,19 @@ var ArtworkSchema = new mongoose.Schema({
 	},
 	annotations: [
 		{
+			user: {
+				type: String
+			},
 			shape: {
 				type: String
 			},
-			x: {
+			relX: {
 				type: Number
 			},
-			y: {
+			relY: {
 				type: Number
 			},
-			radius: {
+			relRadius: {
 				type: Number
 			},
 			text: {

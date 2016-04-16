@@ -6,6 +6,7 @@ var router = express.Router();
 
 //models
 var Artwork = require('./models/artwork.js');
+var User = require('./models/user.js');
 
 //replace this with your Mongolab URL
 mongoose.connect('mongodb://artsmart:artsmart@ds011251.mlab.com:11251/artsmart');
@@ -36,24 +37,187 @@ app.use('/api', router);
 var homeRoute = router.route('/');
 var artworksRoute = router.route('/artworks');
 var usersRoute = router.route('/users');
+var artworkRoute = router.route('/artworks/:id');
+var userRoute = router.route('/users/:id');
 
-homeRoute.get(function(req, res) {
-  res.json({ message: 'ARTsmart yay' });
-});
-
-artworksRoute.get(function(req, res) {
-	res.json({ message: 'artworks data'});
-});
-
-usersRoute.get(function(req, res) {
-	res.json({ message: 'users data'});
-});
-
-/*var testing = new Artwork({
-	title: "testing"
+/*var testing = new User({
+	name: "testing"
 });
 
 testing.save();*/
+
+
+//HOME
+homeRoute.get(function(req, res) {
+  res.json({ message: 'ARTsmart Home. Go to /users or /artworks' });
+});
+
+
+//ARTWORK
+artworksRoute.get(function(req, res) {
+	Artwork.find(function(error, docs) {
+		if (error) {
+			res.json({message: "unable to retrieve users data"});
+		}
+		else {
+			res.json(docs);
+		}
+	});
+});
+
+artworkRoute.get(function(req, res) {
+	Artwork.findById(req.params.id, function(error, doc) {
+		if (error) {
+			res.json({message: "could not find artwork"});
+		}
+		else {
+			res.json(doc);
+		}
+	})
+});
+
+artworksRoute.post(function(req, res) {
+	var artwork = new Artwork();
+
+	artwork = req.body;
+
+	artwork.save(function(error) {
+		if (error) {
+			res.json({message: "unable to create artwork"});
+		}
+		else {
+			res.json({message: "created artwork"});
+		}
+	})
+});
+
+artworkRoute.put(function(req, res) {
+	Artwork.findById(req.params.id, function(error, doc) {
+		if (error) {
+			res.json({message: 'artwork not found'});
+		}
+		else {
+			doc = req.body;
+		}
+
+		doc.save(function(error) {
+			if (error) {
+				res.json({message: 'failed to save artwork'});
+			}
+			else {
+				res.json({message: 'updated user'});
+			}
+		})
+	})
+});
+
+artworkRoute.delete(function(req,res) {
+	Artwork.findById(req.params.id, function(error, doc) {
+		if (error) {
+			res.json({message: 'cant find artwork'});
+		}
+		else {
+			Artwork.findByIdAndRemove(req.params.id, function(error) {
+				if (error) {
+					res.json({message: 'failed to delete user'});
+				}
+				else {
+					res.json({message: "deleted user"});
+				}
+			})
+		}
+	})
+})
+
+//USERS
+usersRoute.get(function(req, res) {
+	User.find(function(error, docs) {
+		if (error) {
+			res.json({message: "users not found"});
+		}
+		else {
+			res.json(docs);
+		}
+	});
+});
+
+userRoute.get(function(req, res) {
+	User.findById(req.params.id, function(error, doc) {
+		if (error) {
+			res.json({message: "user not found"});
+		}
+		else {
+			res.json(doc);
+		}
+	});
+})
+
+/*
+
+userRoute.delete(function(req, res) {  //done
+	User.findById(req.params.id, function(err, user){
+		if(err){
+			res.status(500);
+			res.json( { message: 'Error finding database', data: [] } );
+		}
+		else if(!user){
+			res.status(404);
+			res.json( { message: 'User not found to delete', data: [] } );
+		}
+		else{
+			User.findByIdAndRemove(req.params.id, function(err) {
+				if(err){
+					res.status(404);
+					res.json( {message: 'Failed to delete user', data: [] } );
+				}
+				else {
+					res.status(200);
+					res.json( {message: 'Deleted User', data: [] } );
+				}
+			});
+		}
+	});
+});
+
+userRoute.put(function(req, res) {  //done
+	User.findById(req.params.id, function(err, user){
+		if(err){
+			res.status(404);
+			res.json( { message: 'User not found', data: [] } );
+		}
+
+		if(!req.body.pendingTasks)
+            user.pendingTasks = [];
+        else 
+            user.pendingTasks = req.body.pendingTasks;
+
+        user.save(function(err, user) {
+            if (err){
+                res.status(500);
+            	res.json({ message: 'Failed to save user', data: [] });
+            }
+            else{
+                res.status(200);
+                res.json({ message: 'Updated User', data: user } );
+            }
+        });
+	});
+});
+
+usersRoute.post(function(req, res) {
+	var user = new User();
+
+	user = req.body;
+
+	user.save(function(error) {
+		if (error) {
+			res.json({message: "unable to create user"});
+		}
+		else {
+			res.json(message: "created user");
+		}
+	});
+});*/
 
 //Llama route
 //var llamaRoute = router.route('/llamas');
@@ -61,6 +225,28 @@ testing.save();*/
 var tasksRoute = router.route('/tasks');
 var userRoute = router.route('/users/:id');
 var taskRoute = router.route('/tasks/:id');
+
+usersRoute.post(function(req, res) {  //done
+	var user = new User();
+
+	user.name = req.body.name;
+	user.email = req.body.email;
+	user.pendingTasks = req.body.pendingTasks;
+	user.dateCreated = Date.now();
+	if(!user.pendingTasks){
+		user.pendingTasks = [];
+	}
+	user.save(function(err) {
+		if(err){
+			res.status(500);
+			res.json( { message: 'Failed to create user', data: [] } );
+		}
+		else {
+			res.status(201);
+			res.json( { message: 'Created User', data: user } );
+		}
+	});
+});
 
 usersRoute.get(function(req, res) {  //NEED TO ADD THE SPECIFIC STUFF  /api/users?where = {}&sort=___&cont
 	var query = User.find(); 
@@ -100,27 +286,6 @@ usersRoute.get(function(req, res) {  //NEED TO ADD THE SPECIFIC STUFF  /api/user
             })
 });
 
-usersRoute.post(function(req, res) {  //done
-	var user = new User();
-
-	user.name = req.body.name;
-	user.email = req.body.email;
-	user.pendingTasks = req.body.pendingTasks;
-	user.dateCreated = Date.now();
-	if(!user.pendingTasks){
-		user.pendingTasks = [];
-	}
-	user.save(function(err) {
-		if(err){
-			res.status(500);
-			res.json( { message: 'Failed to create user', data: [] } );
-		}
-		else {
-			res.status(201);
-			res.json( { message: 'Created User', data: user } );
-		}
-	});
-});
 
 usersRoute.options(function(req, res){  //done
       res.writeHead(200);
@@ -144,55 +309,6 @@ userRoute.get(function(req, res) {  //done
 	});
 });
 
-userRoute.put(function(req, res) {  //done
-	User.findById(req.params.id, function(err, user){
-		if(err){
-			res.status(404);
-			res.json( { message: 'User not found', data: [] } );
-		}
-
-		if(!req.body.pendingTasks)
-            user.pendingTasks = [];
-        else 
-            user.pendingTasks = req.body.pendingTasks;
-
-        user.save(function(err, user) {
-            if (err){
-                res.status(500);
-            	res.json({ message: 'Failed to save user', data: [] });
-            }
-            else{
-                res.status(200);
-                res.json({ message: 'Updated User', data: user } );
-            }
-        });
-	});
-});
-
-userRoute.delete(function(req, res) {  //done
-	User.findById(req.params.id, function(err, user){
-		if(err){
-			res.status(500);
-			res.json( { message: 'Error finding database', data: [] } );
-		}
-		else if(!user){
-			res.status(404);
-			res.json( { message: 'User not found to delete', data: [] } );
-		}
-		else{
-			User.findByIdAndRemove(req.params.id, function(err) {
-				if(err){
-					res.status(404);
-					res.json( {message: 'Failed to delete user', data: [] } );
-				}
-				else {
-					res.status(200);
-					res.json( {message: 'Deleted User', data: [] } );
-				}
-			});
-		}
-	});
-});
 
 tasksRoute.get(function(req, res) {  //NEED TO ADD THE SPECIFIC STUFF
 	var query = Task.find(); 
