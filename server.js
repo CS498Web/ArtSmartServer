@@ -5,7 +5,7 @@ var bodyParser = require('body-parser');
 var router = express.Router();
 
 //models
-var Album = require('./models/album.js');
+var Artwork = require('./models/artwork.js');
 
 //replace this with your Mongolab URL
 mongoose.connect('mongodb://artsmart:artsmart@ds011251.mlab.com:11251/artsmart');
@@ -34,12 +34,22 @@ app.use('/api', router);
 
 //Default route here
 var homeRoute = router.route('/');
+var artworksRoute = router.route('/artworks');
+var usersRoute = router.route('/users');
 
 homeRoute.get(function(req, res) {
   res.json({ message: 'ARTsmart yay' });
 });
 
-/*var testing = new Album({
+artworksRoute.get(function(req, res) {
+	res.json({ message: 'artworks data'});
+});
+
+usersRoute.get(function(req, res) {
+	res.json({ message: 'users data'});
+});
+
+/*var testing = new Artwork({
 	title: "testing"
 });
 
