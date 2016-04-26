@@ -1,20 +1,31 @@
 // Get the packages we need
 var express = require('express');
+var app = express();
 var mongoose = require('mongoose');
-//var Llama = require('./models/llama');
-var User = require('./models/user');
-var Task = require('./models/task');
+var passport = require('passport');
+var morgan = require('morgan');
+var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var router = express.Router();
+var session = require('express-session');
+var configDB = require('./config/database.js');
+
+//models
+var Artwork = require('./models/artwork.js');
+var User = require('./models/user.js');
 
 //replace this with your Mongolab URL
-mongoose.connect('mongodb://rlarson2:buddy5694@ds019990.mlab.com:19990/cs498mp4');
-
+mongoose.connect('mongodb://artsmart:artsmart@ds011251.mlab.com:11251/artsmart');
+require('./config/passport')(passport);
 // Create our Express application
-var app = express();
-
+app.use(morgan('dev'));
+app.use(cookieParser());
+//app.use(bodyParser());NOT NEEDED?
 // Use environment defined port or 4000
 var port = process.env.PORT || 4000;
+
+app.use(session({ secret: 'passport demo' }));
+app.use(express.static(__dirname + '/frontend'));
 
 //Allow CORS so that backend and frontend could pe put on different servers
 var allowCrossDomain = function(req, res, next) {
@@ -23,7 +34,8 @@ var allowCrossDomain = function(req, res, next) {
   next();
 };
 app.use(allowCrossDomain);
-
+app.use(passport.initialize());
+app.use(passport.session());
 // Use the body-parser package in our application
 app.use(bodyParser.urlencoded({
   extended: true
@@ -32,285 +44,127 @@ app.use(bodyParser.urlencoded({
 // All our routes will start with /api
 app.use('/api', router);
 
+require('./app/routes.js')(app, passport);
+
 //Default route here
 var homeRoute = router.route('/');
-
-homeRoute.get(function(req, res) {
-  res.json({ message: 'Hello World!' });
-});
-
-//Llama route
-//var llamaRoute = router.route('/llamas');
+var artworksRoute = router.route('/artworks');
 var usersRoute = router.route('/users');
-var tasksRoute = router.route('/tasks');
+var artworkRoute = router.route('/artworks/:id');
 var userRoute = router.route('/users/:id');
-var taskRoute = router.route('/tasks/:id');
 
-usersRoute.get(function(req, res) {  //NEED TO ADD THE SPECIFIC STUFF  /api/users?where = {}&sort=___&cont
-	var query = User.find(); 
-	var whereQuery = req.query["where"];
-	var sortQuery = req.query["sort"];
-	var selectQuery = req.query["select"];
-	var skipQuery = req.query["skip"];
-	var limitQuery = req.query["limit"];
-	var countQuery = req.query["count"];
-	 console.log(whereQuery);
-	 if(whereQuery==undefined) {
-	 	whereQuery="{}";
-	 }
-	 var wherejson = JSON.parse(whereQuery);
-	 query.where(wherejson);
-	 if(sortQuery) {
-	 	query.sort(JSON.parse(sortQuery));
-	 }
-	if(selectQuery) {
-		query.select(JSON.parse(selectQuery));
-	}
-	if(skipQuery && !isNaN(parseInt(skipQuery))) {
-		query.skip(skipQuery);
-	}
-	if(limitQuery && !isNaN(parseInt(limitQuery))) {
-		query.limit(limitQuery);
-	}
-	if(Boolean(countQuery)){
-		query.count();
-	}
-        query.exec(function (err, users) {
-                if (err)
-                    res.status(500).json({ message: 'Could not complete request', data: [] });
-
-                else
-                    res.status(200).json({ message: 'Completed Request', data: users });
-            })
+/*var testing = new User({
+	name: "testing"
 });
 
-usersRoute.post(function(req, res) {  //done
-	var user = new User();
+testing.save();*/
 
-	user.name = req.body.name;
-	user.email = req.body.email;
-	user.pendingTasks = req.body.pendingTasks;
-	user.dateCreated = Date.now();
-	if(!user.pendingTasks){
-		user.pendingTasks = [];
-	}
-	user.save(function(err) {
-		if(err){
-			res.status(500);
-			res.json( { message: 'Failed to create user', data: [] } );
+
+//HOME
+homeRoute.get(function(req, res) {
+  res.json({ message: 'ARTsmart Home. Go to /users or /artworks' });
+});
+
+
+//ARTWORK
+artworksRoute.get(function(req, res) {
+	Artwork.find(function(error, docs) {
+		if (error) {
+			res.json({message: "unable to retrieve users data"});
 		}
 		else {
-			res.status(201);
-			res.json( { message: 'Created User', data: user } );
+			res.json(docs);
 		}
 	});
 });
 
-usersRoute.options(function(req, res){  //done
-      res.writeHead(200);
-      res.end();
+artworkRoute.get(function(req, res) {
+	Artwork.findById(req.params.id, function(error, doc) {
+		if (error) {
+			res.json({message: "could not find artwork"});
+		}
+		else {
+			res.json(doc);
+		}
+	})
 });
 
-userRoute.get(function(req, res) {  //done
-	User.findById(req.params.id, function(err, user){
-        if(err){ 
-            res.status(500);
-            res.json( { message: 'Error finding User', data: [] } );
-        }
-        else if(!user){
-        	res.status(404);
-        	res.json( { message: 'User not found', data: [] } );
-        }
-        else {
-            res.status(200);
-            res.json({ message: 'Found User', data: user } );
-        }
-	});
+artworksRoute.post(function(req, res) {
+	var artwork = new Artwork();
+
+	artwork = req.body;
+
+	artwork.save(function(error) {
+		if (error) {
+			res.json({message: "unable to create artwork"});
+		}
+		else {
+			res.json({message: "created artwork"});
+		}
+	})
 });
 
-userRoute.put(function(req, res) {  //done
-	User.findById(req.params.id, function(err, user){
-		if(err){
-			res.status(404);
-			res.json( { message: 'User not found', data: [] } );
+artworkRoute.put(function(req, res) {
+	Artwork.findById(req.params.id, function(error, doc) {
+		if (error) {
+			res.json({message: 'artwork not found'});
+		}
+		else {
+			doc = req.body;
 		}
 
-		if(!req.body.pendingTasks)
-            user.pendingTasks = [];
-        else 
-            user.pendingTasks = req.body.pendingTasks;
-
-        user.save(function(err, user) {
-            if (err){
-                res.status(500);
-            	res.json({ message: 'Failed to save user', data: [] });
-            }
-            else{
-                res.status(200);
-                res.json({ message: 'Updated User', data: user } );
-            }
-        });
-	});
+		doc.save(function(error) {
+			if (error) {
+				res.json({message: 'failed to save artwork'});
+			}
+			else {
+				res.json({message: 'updated user'});
+			}
+		})
+	})
 });
 
-userRoute.delete(function(req, res) {  //done
-	User.findById(req.params.id, function(err, user){
-		if(err){
-			res.status(500);
-			res.json( { message: 'Error finding database', data: [] } );
+artworkRoute.delete(function(req,res) {
+	Artwork.findById(req.params.id, function(error, doc) {
+		if (error) {
+			res.json({message: 'cant find artwork'});
 		}
-		else if(!user){
-			res.status(404);
-			res.json( { message: 'User not found to delete', data: [] } );
-		}
-		else{
-			User.findByIdAndRemove(req.params.id, function(err) {
-				if(err){
-					res.status(404);
-					res.json( {message: 'Failed to delete user', data: [] } );
+		else {
+			Artwork.findByIdAndRemove(req.params.id, function(error) {
+				if (error) {
+					res.json({message: 'failed to delete user'});
 				}
 				else {
-					res.status(200);
-					res.json( {message: 'Deleted User', data: [] } );
+					res.json({message: "deleted user"});
 				}
-			});
+			})
+		}
+	})
+})
+
+//USERS
+usersRoute.get(function(req, res) {
+	User.find(function(error, docs) {
+		if (error) {
+			res.json({message: "users not found"});
+		}
+		else {
+			res.json(docs);
 		}
 	});
 });
 
-tasksRoute.get(function(req, res) {  //NEED TO ADD THE SPECIFIC STUFF
-	var query = Task.find(); 
-	var whereQuery = req.query["where"];
-	var sortQuery = req.query["sort"];
-	var selectQuery = req.query["select"];
-	var skipQuery = req.query["skip"];
-	var limitQuery = req.query["limit"];
-	var countQuery = req.query["count"];
-	 console.log(whereQuery);
-	 if(whereQuery==undefined) {
-	 	whereQuery="{}";
-	 }
-	 var wherejson = JSON.parse(whereQuery);
-	 query.where(wherejson);
-	 if(sortQuery) {
-	 	query.sort(JSON.parse(sortQuery));
-	 }
-	if(selectQuery) {
-		query.select(JSON.parse(selectQuery));
-	}
-	if(skipQuery && !isNaN(parseInt(skipQuery))) {
-		query.skip(skipQuery);
-	}
-	if(limitQuery && !isNaN(parseInt(limitQuery))) {
-		query.limit(limitQuery);
-	}
-	else {
-		query.limit(100)
-	}
-	if(Boolean(countQuery)){
-		query.count();
-	}
-        query.exec(function (err, users) {
-                if (err)
-                    res.status(500).json({ message: 'Could not complete request', data: [] });
-
-                else
-                    res.status(200).json({ message: 'Completed Request', data: users });
-            })
-});
-
-tasksRoute.post(function(req, res) { //done
-	var task = new Task();
-
-    task.name = req.body.name;
-    task.description = (req.body.description ? req.body.description : "");
-    task.deadline = req.body.deadline;
-    task.completed = (req.body.completed ? req.body.completed : false);
-    task.assignedUser = (req.body.assignedUser ? req.body.assignedUser : "");
-    task.assignedUserName = (req.body.assignedUserName ? req.body.assignedUserName : "unassigned");
-    task.dateCreated = Date.now();
+userRoute.get(function(req, res) {
+	User.findById(req.params.id, function(error, doc) {
+		if (error) {
+			res.json({message: "user not found"});
+		}
+		else {
+			res.json(doc);
+		}
+	});
+})
 
 
-    task.save(function(err) {
-        if (err){
-            res.status(500);
-        	res.json({ message: 'Could not add task', data: [] });
-        }
-        else
-            res.status(201);
-        	res.json({ message: 'Added to task', data: task });
-    });
-});
-
-tasksRoute.options(function(req, res){  //done
-      res.writeHead(200);
-      res.end();
-});
-
-taskRoute.get(function(req, res) { //done
-    Task.findById(req.params.id, function(err, task){
-        if(err)
-            res.status(500).json({ message: 'Server error', data: [] });
-        else if(!task){
-        	res.status(404).json({ message: 'Unable to complete request', data: [] });
-        }
-        else
-            res.status(200).json({ message: 'Completed Request', data: task });
-    });
-});
-
-taskRoute.put(function(req, res) {  //done
-
-    Task.findById(req.params.id, function(err, task) {
-
-        if (err){
-            res.status(500);
-            res.json({ message: 'Unable to complete request: Server Error', data: [] });
-        }
-        if(!task){
-        	res.status(404);
-            res.json({ message: 'Task not found', data: [] });
-        }
-        task.name= req.body.name;
-        task.description= req.body.description || "";
-        task.deadline= req.body.deadline;
-        task.completed= req.body.completed  || false;
-        task.assignedUser= req.body.assignedUser  || "";
-        task.assignedUserName= req.body.assignedUserName  || "unassigned";
-
-
-        task.save(function(err) {
-            if (err){
-                res.status(500);
-                res.json({ message: 'Server Error', data: err });
-            }
-            else{
-                res.status(200);
-                res.json({ message: 'Updated task', data: task });
-            }
-        });
-
-    });
-});
-
-taskRoute.delete(function(req, res) {
-    Task.findByIdAndRemove(req.params.id, function(err) {
-        if (err){
-            res.status(404);
-            res.json({ message: 'Server error', data: err });
-        }
-        else{
-            res.status(200);
-        	res.json({ message: 'Task deleted', data:{} });
-        }
-    });
-});
-// llamaRoute.get(function(req, res) {
-//   res.json([{ "name": "alice", "height": 12 }, { "name": "jane", "height": 13 }]);
-// });
-
-//Add more routes here
-
-// Start the server
 app.listen(port);
 console.log('Server running on port ' + port);
