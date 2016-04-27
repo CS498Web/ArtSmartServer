@@ -24,7 +24,7 @@ app.use(cookieParser());
 // Use environment defined port or 4000
 var port = process.env.PORT || 4000;
 
-app.use(session({ secret: 'passport demo' }));
+app.use(session({ secret: 'passport_demo' }));
 app.use(express.static(__dirname + '/frontend'));
 
 //Allow CORS so that backend and frontend could pe put on different servers
@@ -44,7 +44,7 @@ app.use(bodyParser.urlencoded({
 // All our routes will start with /api
 app.use('/api', router);
 
-require('./app/routes.js')(app, passport);
+//require('./app/routes.js')(app, passport); not needed as passport in same place as routes, potentially seperate.
 
 //Default route here
 var homeRoute = router.route('/');
@@ -165,6 +165,98 @@ userRoute.get(function(req, res) {
 	});
 })
 
+usersRoute.post(function(req, res) {  //done
+	var user = new User();
+
+	user.name = req.body.name;
+	user.password = req.body.password;
+	user.email = req.body.email;
+	user.worksAnnotaded = req.body.worksAnnotaded;
+	user.worksUploaded = req.body.worksUploaded;
+
+	user.save(function(err) {
+		if(err){
+			res.status(500);
+			res.json( { message: 'Failed to create user', data: [] } );
+		}
+		else {
+			res.status(201);
+			res.json( { message: 'Created User', data: user } );
+		}
+	});
+});
+
+userRoute.put(function(req, res) {  //done
+	User.findById(req.params.id, function(err, user){
+		if(err){
+			res.status(404);
+			res.json( { message: 'User not found', data: [] } );
+		}
+        user.save(function(err, user) {
+            if (err){
+                res.status(500);
+            	res.json({ message: 'Failed to save user', data: [] });
+            }
+            else{
+                res.status(200);
+                res.json({ message: 'Updated User', data: user } );
+            }
+        });
+	});
+});
+
+usersRoute.post(function(req, res) {  //done
+	var user = new User();
+
+	user.name = req.body.name;
+	user.email = req.body.email;
+	user.password = req.body.password;
+	user.worksAnnotaded = req.body.worksAnnotaded;
+	users.worksUploaded = req.body.worksUploaded;
+
+	user.save(function(err) {
+		if(err){
+			res.status(500);
+			res.json( { message: 'Failed to create user', data: [] } );
+		}
+		else {
+			res.status(201);
+			res.json( { message: 'Created User', data: user } );
+		}
+	});
+});
+
+// module.exports = function(app, passport) {  AUTHENTICATION
+
+// 	app.post('/signup', passport.authenticate('local-signup'), function(req, res) {
+// 		res.redirect('/profile.html');
+// 	});
+
+// 	app.post('/login', passport.authenticate('local-login'), function(req, res) {
+// 		res.redirect('/profile.html');
+// 	});
+
+// 	app.get('/profile', isLoggedIn, function(req, res) {
+// 		res.json({
+// 			user: req.user
+// 		});
+// 	});
+
+// 	app.get('/logout', function(req, res) {
+// 		req.logout();
+// 		res.redirect('/');
+// 	});
+
+// 	function isLoggedIn(req, res, next) {
+// 		if(req.isAuthenticated())
+// 			return next();
+
+// 		res.json({
+// 			error: "User not logged in"
+// 		});
+// 	}
+
+// };
 
 app.listen(port);
 console.log('Server running on port ' + port);
