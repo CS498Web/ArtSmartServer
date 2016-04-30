@@ -4,35 +4,33 @@ var app          = express();
 var port         = process.env.PORT || 4000;
 var mongoose     = require('mongoose');
 var passport     = require('passport');
-var flash        = require('connect-flash');
 var morgan       = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser   = require('body-parser');
 var session      = require('express-session');
 var router       = express.Router();
-
-var configDB     = require('./config/database.js');
+var configDB     = require('./config/database.js');  //THESE ALL WORK
 
 //configuration of database
 mongoose.connect('mongodb://artsmart:artsmart@ds011251.mlab.com:11251/artsmart');
+
+require('./config/passport')(passport);
 
 //set up the express application
 app.use(morgan('dev'));
 app.use(cookieParser());
 app.use(bodyParser());
 
-app.set('view engine', 'ejs');
 
+app.use(session({ secret: 'passport_demo' }));
+app.use(express.static(__dirname + '/frontend'));
 
-app.use(flash()); // use connect-flash for flash messages stored in session
 
 //models
 var Artwork = require('./models/artwork.js');
 var User = require('./models/user.js');
-require('./config/passport')(passport);
 
-app.use(session({ secret: 'passport_demo' }));
-app.use(express.static(__dirname + '/frontend'));
+
 
 //Allow CORS so that backend and frontend could pe put on different servers
 var allowCrossDomain = function(req, res, next) {
@@ -46,7 +44,6 @@ var allowCrossDomain = function(req, res, next) {
 app.use(allowCrossDomain);
 app.use(passport.initialize());
 app.use(passport.session());
-app.use(flash()); // use connect-flash for flash messages stored in session
 
 // Use the body-parser package in our application
 app.use(bodyParser.urlencoded({
@@ -56,7 +53,7 @@ app.use(bodyParser.urlencoded({
 // All our routes will start with /api
 app.use('/api', router);
 
-//require('./app/routes.js')(app, passport); not needed as passport in same place as routes, potentially seperate.
+require('./config/routes')(app, passport);
 
 //Default route here
 var homeRoute = router.route('/');
