@@ -1,28 +1,35 @@
 // Get the packages we need
-var express = require('express');
-var app = express();
-var mongoose = require('mongoose');
-var passport = require('passport');
-var morgan = require('morgan');
+var express      = require('express');
+var app          = express();
+var port         = process.env.PORT || 4000;
+var mongoose     = require('mongoose');
+var passport     = require('passport');
+var flash        = require('connect-flash');
+var morgan       = require('morgan');
 var cookieParser = require('cookie-parser');
-var bodyParser = require('body-parser');
-var router = express.Router();
-var session = require('express-session');
-var configDB = require('./config/database.js');
+var bodyParser   = require('body-parser');
+var session      = require('express-session');
+var router       = express.Router();
+
+var configDB     = require('./config/database.js');
+
+//configuration of database
+mongoose.connect('mongodb://artsmart:artsmart@ds011251.mlab.com:11251/artsmart');
+
+//set up the express application
+app.use(morgan('dev'));
+app.use(cookieParser());
+app.use(bodyParser());
+
+app.set('view engine', 'ejs');
+
+
+app.use(flash()); // use connect-flash for flash messages stored in session
 
 //models
 var Artwork = require('./models/artwork.js');
 var User = require('./models/user.js');
-
-//replace this with your Mongolab URL
-mongoose.connect('mongodb://artsmart:artsmart@ds011251.mlab.com:11251/artsmart');
 require('./config/passport')(passport);
-// Create our Express application
-app.use(morgan('dev'));
-app.use(cookieParser());
-//app.use(bodyParser());NOT NEEDED?
-// Use environment defined port or 4000
-var port = process.env.PORT || 4000;
 
 app.use(session({ secret: 'passport_demo' }));
 app.use(express.static(__dirname + '/frontend'));
@@ -31,11 +38,16 @@ app.use(express.static(__dirname + '/frontend'));
 var allowCrossDomain = function(req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Headers", "X-Requested-With, X-HTTP-Method-Override, Content-Type, Accept");
+  res.header('Access-Control-Allow-Credentials', true);
+  res.header('Access-Control-Allow-Origin', req.headers.origin);
+
   next();
 };
 app.use(allowCrossDomain);
 app.use(passport.initialize());
 app.use(passport.session());
+app.use(flash()); // use connect-flash for flash messages stored in session
+
 // Use the body-parser package in our application
 app.use(bodyParser.urlencoded({
   extended: true
@@ -205,58 +217,31 @@ userRoute.put(function(req, res) {  //done
 	});
 });
 
-usersRoute.post(function(req, res) {  //done
-	var user = new User();
-
-	user.name = req.body.name;
-	user.email = req.body.email;
-	user.password = req.body.password;
-	user.worksAnnotaded = req.body.worksAnnotaded;
-	users.worksUploaded = req.body.worksUploaded;
-
-	user.save(function(err) {
+userRoute.delete(function(req, res) {  //done
+	User.findById(req.params.id, function(err, user){
 		if(err){
 			res.status(500);
-			res.json( { message: 'Failed to create user', data: [] } );
+			res.json( { message: 'Error finding database', data: [] } );
 		}
-		else {
-			res.status(201);
-			res.json( { message: 'Created User', data: user } );
+		else if(!user){
+			res.status(404);
+			res.json( { message: 'User not found to delete', data: [] } );
+		}
+		else{
+			User.findByIdAndRemove(req.params.id, function(err) {
+				if(err){
+					res.status(404);
+					res.json( {message: 'Failed to delete user', data: [] } );
+				}
+				else {
+					res.status(200);
+					res.json( {message: 'Deleted User', data: [] } );
+				}
+			});
 		}
 	});
 });
 
-// module.exports = function(app, passport) {  AUTHENTICATION
-
-// 	app.post('/signup', passport.authenticate('local-signup'), function(req, res) {
-// 		res.redirect('/profile.html');
-// 	});
-
-// 	app.post('/login', passport.authenticate('local-login'), function(req, res) {
-// 		res.redirect('/profile.html');
-// 	});
-
-// 	app.get('/profile', isLoggedIn, function(req, res) {
-// 		res.json({
-// 			user: req.user
-// 		});
-// 	});
-
-// 	app.get('/logout', function(req, res) {
-// 		req.logout();
-// 		res.redirect('/');
-// 	});
-
-// 	function isLoggedIn(req, res, next) {
-// 		if(req.isAuthenticated())
-// 			return next();
-
-// 		res.json({
-// 			error: "User not logged in"
-// 		});
-// 	}
-
-// };
 
 app.listen(port);
 console.log('Server running on port ' + port);
