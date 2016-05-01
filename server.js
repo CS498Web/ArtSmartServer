@@ -4,6 +4,7 @@ var app          = express();
 var port         = process.env.PORT || 4000;
 var mongoose     = require('mongoose');
 var passport     = require('passport');
+var flash        = require('connect-flash');
 var morgan       = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser   = require('body-parser');
@@ -14,13 +15,10 @@ var configDB     = require('./config/database.js');  //THESE ALL WORK
 //configuration of database
 mongoose.connect('mongodb://artsmart:artsmart@ds011251.mlab.com:11251/artsmart');
 
-require('./config/passport')(passport);
-
 //set up the express application
 app.use(morgan('dev'));
 app.use(cookieParser());
 app.use(bodyParser());
-
 
 app.use(session({ secret: 'passport_demo' }));
 app.use(express.static(__dirname + '/frontend'));
@@ -37,14 +35,13 @@ var allowCrossDomain = function(req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Headers", "X-Requested-With, X-HTTP-Method-Override, Content-Type, Accept");
   res.header('Access-Control-Allow-Credentials', true);
-  res.header('Access-Control-Allow-Origin', req.headers.origin);
-
+  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,PATCH');
   next();
 };
 app.use(allowCrossDomain);
 app.use(passport.initialize());
 app.use(passport.session());
-
+app.use(flash());
 // Use the body-parser package in our application
 app.use(bodyParser.urlencoded({
   extended: true
@@ -53,6 +50,7 @@ app.use(bodyParser.urlencoded({
 // All our routes will start with /api
 app.use('/api', router);
 
+require('./config/passport')(passport);
 require('./config/routes')(app, passport);
 
 //Default route here
@@ -61,13 +59,6 @@ var artworksRoute = router.route('/artworks');
 var usersRoute = router.route('/users');
 var artworkRoute = router.route('/artworks/:id');
 var userRoute = router.route('/users/:id');
-
-/*var testing = new User({
-	name: "testing"
-});
-
-testing.save();*/
-
 
 //HOME
 homeRoute.get(function(req, res) {
@@ -238,6 +229,14 @@ userRoute.delete(function(req, res) {  //done
 		}
 	});
 });
+
+router.route("/login").post(passport.authenticate("local-login"), function(req, res){
+	res.send(true);
+})
+
+router.route('/signup').post(passport.authenticate('local-signup'), function(req, res){
+	res.send(true);
+})
 
 
 app.listen(port);
