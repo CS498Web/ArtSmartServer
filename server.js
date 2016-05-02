@@ -10,6 +10,8 @@ var bodyParser   = require('body-parser');
 var session      = require('express-session');
 var router       = express.Router();
 var configDB     = require('./config/database.js');  //THESE ALL WORK
+var utils		 = require('./utility');
+var _ 			 = require('underscore');
 
 //configuration of database
 mongoose.connect('mongodb://artsmart:artsmart@ds011251.mlab.com:11251/artsmart');
@@ -34,11 +36,9 @@ var User = require('./models/user.js');
 
 //Allow CORS so that backend and frontend could pe put on different servers
 var allowCrossDomain = function(req, res, next) {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Headers", "X-Requested-With, X-HTTP-Method-Override, Content-Type, Accept");
-  res.header('Access-Control-Allow-Credentials', true);
-  res.header('Access-Control-Allow-Origin', req.headers.origin);
-
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
+  res.header('Access-Control-Allow-Headers', 'X-Requested-With, X-HTTP-Method-Override, Content-Type, Accept');
   next();
 };
 app.use(allowCrossDomain);
@@ -59,7 +59,8 @@ require('./config/routes')(app, passport);
 var homeRoute = router.route('/');
 var artworksRoute = router.route('/artworks');
 var usersRoute = router.route('/users');
-var artworkRoute = router.route('/artworks/:id');
+var artworkIdRoute = router.route('/artworks/:id');
+var annotationIdRoute = router.route('/artworks/:artwork_id/annotations/:annotation_id');
 var userRoute = router.route('/users/:id');
 
 /*var testing = new User({
@@ -87,7 +88,7 @@ artworksRoute.get(function(req, res) {
 	});
 });
 
-artworkRoute.get(function(req, res) {
+artworkIdRoute.get(function(req, res) {
 	Artwork.findById(req.params.id, function(error, doc) {
 		if (error) {
 			res.json({message: "could not find artwork"});
@@ -97,29 +98,30 @@ artworkRoute.get(function(req, res) {
 		}
 	})
 });
-
+ 
 artworksRoute.post(function(req, res) {
-	var artwork = new Artwork();
+	var artwork = new Artwork(req.body);
 
-	artwork = req.body;
-
-	artwork.save(function(error) {
+	artwork.save(function(error, successData) {
 		if (error) {
 			res.json({message: "unable to create artwork"});
 		}
 		else {
-			res.json({message: "created artwork"});
+			res.json({
+				message: "created artwork",
+				data: successData
+			});
 		}
 	})
 });
 
-artworkRoute.put(function(req, res) {
+artworkIdRoute.put(function(req, res) {
 	Artwork.findById(req.params.id, function(error, doc) {
 		if (error) {
 			res.json({message: 'artwork not found'});
 		}
 		else {
-			doc = req.body;
+			utils.updateDocument(doc, Artwork, req.body);
 		}
 
 		doc.save(function(error) {
@@ -133,7 +135,7 @@ artworkRoute.put(function(req, res) {
 	})
 });
 
-artworkRoute.delete(function(req,res) {
+artworkIdRoute.delete(function(req,res) {
 	Artwork.findById(req.params.id, function(error, doc) {
 		if (error) {
 			res.json({message: 'cant find artwork'});
@@ -145,6 +147,25 @@ artworkRoute.delete(function(req,res) {
 				}
 				else {
 					res.json({message: "deleted user"});
+				}
+			})
+		}
+	})
+})
+
+annotationIdRoute.delete(function(req,res) {
+	Artwork.findById(req.params.artwork_id, function(error, doc) {
+		if (error) {
+			res.json({message: 'cant find artwork'});
+		}
+		else {
+			doc.annotations.pull({ _id: req.params.annotation_id })
+			doc.save(function(error) {
+				if (error) {
+					res.json({message: 'failed to delete annotation'});
+				}
+				else {
+					res.json({message: 'annotation deleted'});
 				}
 			})
 		}
