@@ -77,7 +77,7 @@ artworksRoute.get(function(req, res) {
 			res.json({message: "unable to retrieve users data"});
 		}
 		else {
-			res.json(docs);
+			res.json({message: "success", data: docs});
 		}
 	});
 });
@@ -255,22 +255,19 @@ userRoute.delete(function(req, res) {  //done
 });
 
 router.route("/login").post(passport.authenticate("local-login"), function(req, res){
-	
-	res.send(req.user);
+
+	console.log(req.user);
+	res.json({ id: req.user.id, name: req.user.name });
 })
 
 router.route('/signup').post(passport.authenticate('local-signup'), function(req, res){
-	res.send(req.user);
+	res.json({ id: req.user.id, name: req.user.name });
 })
 
-router.route('/authenticate').post(passport.authenticate('local-authenticate'), function(req, res){
-	if (!req.isAuthenticated()) {
-            res.send(false);
-          } else {
-            res.status(200).send(req.user);
-          }
-})
-
+router.route('/logout').delete(function(req, res){
+ 	req.logout();
+ 	res.json({ message: "successfully logged out" });
+});
 
 
 app.listen(port);
