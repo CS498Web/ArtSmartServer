@@ -239,6 +239,16 @@ router.route('/signup').post(passport.authenticate('local-signup'), function(req
 	res.send(true);
 })
 
+router.route('/authenticate').post(passport.authenticate('local-authenticate'), function(req, res){
+	if (!req.isAuthenticated()) {
+            res.send(false);
+          } else {
+            res.status(200).send(req._id);
+          }
+        }
+})
+
+
 
 app.listen(port);
 console.log('Server running on port ' + port);
