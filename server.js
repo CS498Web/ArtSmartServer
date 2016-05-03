@@ -255,20 +255,20 @@ userRoute.delete(function(req, res) {  //done
 });
 
 router.route("/login").post(passport.authenticate("local-login"), function(req, res){
-	res.send(true);
+	
+	res.send(req.user);
 })
 
 router.route('/signup').post(passport.authenticate('local-signup'), function(req, res){
-	res.send(true);
+	res.send(req.user);
 })
 
 router.route('/authenticate').post(passport.authenticate('local-authenticate'), function(req, res){
 	if (!req.isAuthenticated()) {
             res.send(false);
           } else {
-            res.status(200).send(req._id);
+            res.status(200).send(req.user);
           }
-        }
 })
 
 
