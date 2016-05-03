@@ -21,11 +21,11 @@ var UserSchema = new mongoose.Schema({
 	}]
 });
 
-userSchema.methods.generateHash = function(password) {
+UserSchema.methods.generateHash = function(password) {
 	return bcrypt.hashSync(password, bcrypt.genSaltSync(8), null);
 };
 
-userSchema.methods.validPassword = function(password) {
+UserSchema.methods.validPassword = function(password) {
 	return bcrypt.compareSync(password, this.local.password);
 };
 
