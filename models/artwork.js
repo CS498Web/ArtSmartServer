@@ -2,55 +2,83 @@ var mongoose = require('mongoose');
 
 var ArtworkSchema = new mongoose.Schema({
 	title: {
-		type: String
+		type: String,
+		default: ""
+	},
+	description: {
+		type: String,
+		default: ""
 	},
 	artists: [{
-		type: String
+		type: String,
+		default: ""
 	}],
-	location: {
-		type: String
+	originLocation: {
+		type: String,
+		default: ""
+	},
+	currentLocation: {
+		type: String,
+		default: ""
 	},
 	period: {
-		type: String
+		type: String,
+		default: ""
 	},
 	year: {
-		type: String
+		type: Number,
+		default: ""
 	},
-	media: {
-		type: String
+	medium: {
+		type: String,
+		default: ""
 	},
-	actualSize: [{
-		type: String
-	}],
+	actualSize: {
+		width : { type: Number, default: 0},
+		height : { type: Number, default: 0},
+		unit : { type:String, default: ""}
+	},
 	src: {
-		type: String
+		type: String,
+		default: ""
+	},
+	dateCreated: {
+		type : Date,
+		default : Date.now
+	},
+	uploadedBy: {
+		type : String, //userId
+		default: ""
 	},
 	annotations: [
 		{
-			annotationCreator: {
-				type: String
+			annotationCreator: { //userId
+				type : String,
+				default : ""
 			},
-			shape: {
-				type: String
+			shapeType: {
+				type: String,
+				default: ""
 			},
-			relX: {
-				type: Number
-			},
-			relY: {
-				type: Number
-			},
-			relRadius: {
-				type: Number
-			},
-			annotationText: {
-				type: String
+			relativeSegmentPoints: [{
+				x : {type: Number, default: 0},
+				y : {type: Number, default: 0}
+			}],
+			text: {
+				type : String,
+				default : ""
 			},
 			comments: [{
-				user: {
+				userId: {
 					type: String//Id of user
 				},
+				dateCreated: {
+					type : Date,
+					default : Date.now
+				},
 				text: {
-					type: String
+					type: String,
+					default: ""
 				}
 			}]
 		}
