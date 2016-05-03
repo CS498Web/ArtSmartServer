@@ -22,7 +22,7 @@ app.use(morgan('dev'));
 app.use(cookieParser());
 app.use(bodyParser());
 
-app.use(session({ secret: 'passport_demo' }));
+app.use(session({ secret: 'ArtSmart' }));
 app.use(express.static(__dirname + '/frontend'));
 
 
