@@ -46,15 +46,27 @@ var ArtworkSchema = new mongoose.Schema({
 		type : Date,
 		default : Date.now
 	},
-	uploadedBy: {
+	uploadedById: {
 		type : String, //userId
+		default: ""
+	},
+	uploadedByName: {
+		type : String, //userName
 		default: ""
 	},
 	annotations: [
 		{
-			annotationCreator: { //userId
+			creatorId: { //userId
 				type : String,
 				default : ""
+			},
+			creatorName: { 
+				type : String,
+				default : ""
+			},
+			dateCreated: { 
+				type : Date,
+				default : Date.now
 			},
 			shapeType: {
 				type: String,
@@ -70,6 +82,9 @@ var ArtworkSchema = new mongoose.Schema({
 			},
 			comments: [{
 				userId: {
+					type: String//Id of user
+				},
+				userName: {
 					type: String//Id of user
 				},
 				dateCreated: {

@@ -118,12 +118,12 @@ artworkIdRoute.put(function(req, res) {
 			utils.updateDocument(doc, Artwork, req.body);
 		}
 
-		doc.save(function(error) {
+		doc.save(function(error, successData) {
 			if (error) {
 				res.json({message: 'failed to save artwork'});
 			}
 			else {
-				res.json({message: 'updated user'});
+				res.json({message: 'updated user', data: successData});
 			}
 		})
 	})
@@ -184,7 +184,7 @@ userRoute.get(function(req, res) {
 			res.json({message: "user not found"});
 		}
 		else {
-			res.json(doc);
+			res.json({message: "user found", data: doc});
 		}
 	});
 })
@@ -216,6 +216,7 @@ userRoute.put(function(req, res) {  //done
 			res.status(404);
 			res.json( { message: 'User not found', data: [] } );
 		}
+		utils.updateDocument(user, User, req.body);
         user.save(function(err, user) {
             if (err){
                 res.status(500);

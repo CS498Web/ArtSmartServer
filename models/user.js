@@ -13,7 +13,7 @@ var UserSchema = new mongoose.Schema({
 		type: String,
 		required: true
 	},
-	worksAnnotaded: [{
+	worksAnnotated: [{
 		type: String  //Id of the works they have commented
 	}],
 	worksUploaded: [{
