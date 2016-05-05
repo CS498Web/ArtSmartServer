@@ -12,6 +12,8 @@ var router       = express.Router();
 var configDB     = require('./config/database.js');  //THESE ALL WORK
 var utils		 = require('./utility');
 var _ 			 = require('underscore');
+var AWS          = require('aws-sdk');
+var uuid         = require('node-uuid'); 
 
 //configuration of database
 mongoose.connect('mongodb://artsmart:artsmart@ds011251.mlab.com:11251/artsmart');
@@ -26,6 +28,15 @@ app.use(bodyParser());
 
 app.use(session({ secret: 'passport_demo' }));
 app.use(express.static(__dirname + '/frontend'));
+
+
+
+//Amazon 
+//hardcoded my credentials in here. NEED TO CHANGE!!!!!!!!!!!!!!!!!!!!!!!!
+AWS.config.update({accessKeyId: 'AKIAJUBVCY726YOYTBYQ', secretAccessKey: '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'});
+AWS.config.region = 'us-west-1';
+
+var s3 = new AWS.S3();
 
 
 //models
@@ -62,6 +73,7 @@ var usersRoute = router.route('/users');
 var artworkIdRoute = router.route('/artworks/:id');
 var annotationIdRoute = router.route('/artworks/:artwork_id/annotations/:annotation_id');
 var userRoute = router.route('/users/:id');
+var amazonRoute = router.route('/amazon');
 
 /*var testing = new User({
 	name: "testing"
@@ -98,9 +110,46 @@ artworkIdRoute.get(function(req, res) {
 		}
 	})
 });
+
+
+/*function uploadImageToAWS(user, binaryImage, callback) {
+	var userId = user._id;
+	buf = new Buffer(binaryImage.replace(/^data:image\/\w+;base64,/, ""),'base64');
+	var params = {
+		Key: userId.toString(), 
+		Body: buf,
+		ContentEncoding: 'base64',
+		ContentType: 'image/jpeg',
+		ACL: 'public-read'
+	};
+	s3Bucket.upload(params, function(err, data) {
+		if (err) {
+		  console.log("Error uploading profile picture: ", err);
+		} else {
+		  console.log("Successfully uploaded image to AWS");
+		  user.profile_picture_url = data.Location;
+		}
+		callback();
+	});
+};*/
  
 artworksRoute.post(function(req, res) {
 	var artwork = new Artwork(req.body);
+
+	//add artwork to S3
+	s3.putObject({
+		Bucket: 'artsmartstorage',
+		Key: uiud.v4() + '.jpg',             //replace with name of image
+		Body: 'image'
+	}, function(error, response) {
+		if (error) {
+			console.log(error);
+		}
+		else {
+			console.log("success");
+			artwork.src = response.Location;
+		}
+	}); 
 
 	artwork.save(function(error, successData) {
 		if (error) {

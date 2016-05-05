@@ -17,6 +17,8 @@
     "passport-google-oauth": "~0.1.5",
     "passport-local": "~0.1.6",
     "passport-twitter": "~1.0.2",
-    "underscore": "^1.8.3"
+    "underscore": "^1.8.3",
+    "aws-sdk": ">= 2.0.9",
+    "node-uuid": ">= 1.4.1"
   }
 }
