@@ -15,6 +15,7 @@ var utils		 = require('./utility');
 var _ 			 = require('underscore');
 var AWS          = require('aws-sdk');
 var uuid         = require('node-uuid'); 
+var secrets      = require('./config/secrets.js'); 
 
 //configuration of database
 mongoose.connect('mongodb://artsmart:artsmart@ds011251.mlab.com:11251/artsmart');
@@ -32,9 +33,8 @@ app.use(express.static(__dirname + '/frontend'));
 
 
 //Amazon 
-//hardcoded my credentials in here. NEED TO CHANGE!!!!!!!!!!!!!!!!!!!!!!!!
-AWS.config.update({accessKeyId: 'AKIAJUBVCY726YOYTBYQ', secretAccessKey: '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'});
-AWS.config.region = 'us-east-1';
+AWS.config.update({accessKeyId: secrets.AWS_CONFIG.accessKeyId, secretAccessKey: secrets.AWS_CONFIG.secretAccessKey});
+AWS.config.region = secrets.AWS_CONFIG.region;
 
 var s3 = new AWS.S3();
 
