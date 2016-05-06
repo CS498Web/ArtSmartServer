@@ -22,7 +22,9 @@ mongoose.connect('mongodb://artsmart:artsmart@ds011251.mlab.com:11251/artsmart')
 //set up the express application
 app.use(morgan('dev'));
 app.use(cookieParser());
-app.use(bodyParser());
+// app.use(bodyParser());
+app.use(bodyParser.json({limit: '50mb'}));
+app.use(bodyParser.urlencoded({limit: '50mb', extended: true}));
 
 app.use(session({ secret: 'passport_demo' }));
 app.use(express.static(__dirname + '/frontend'));
@@ -32,7 +34,7 @@ app.use(express.static(__dirname + '/frontend'));
 //Amazon 
 //hardcoded my credentials in here. NEED TO CHANGE!!!!!!!!!!!!!!!!!!!!!!!!
 AWS.config.update({accessKeyId: 'AKIAJUBVCY726YOYTBYQ', secretAccessKey: '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'});
-AWS.config.region = 'us-west-1';
+AWS.config.region = 'us-east-1';
 
 var s3 = new AWS.S3();
 
@@ -131,10 +133,19 @@ artworksRoute.post(function(req, res) {
 	var artwork = new Artwork(req.body);
 
 	//add artwork to S3
-	s3.putObject({
+	var mimeType = req.body.imageFile.split(';')[0];
+	var fileType = mimeType.split('/')[1];
+	var contentType = mimeType.split(':')[1];
+	var buf = new Buffer(req.body.imageFile.replace(/^data:image\/\w+;base64,/, ""),'base64');
+	console.log(fileType);
+	console.log(contentType);
+	s3.upload({
 		Bucket: 'artsmartstorage',
-		Key: uiud.v4() + '.jpg',             //replace with name of image
-		Body: 'image'
+		Key: uuid.v4() + '.' + fileType,             //replace with name of image
+		Body: buf,
+		ContentEncoding: 'base64',
+		ContentType: contentType,
+		ACL: 'public-read'
 	}, function(error, response) {
 		if (error) {
 			console.log(error);
@@ -142,20 +153,22 @@ artworksRoute.post(function(req, res) {
 		else {
 			console.log("success");
 			artwork.src = response.Location;
+			console.log(response);
+			artwork.save(function(error, successData) {
+				if (error) {
+					res.json({message: "unable to create artwork"});
+				}
+				else {
+					res.json({
+						message: "created artwork",
+						data: successData
+					});
+				}
+			})
 		}
 	}); 
 
-	artwork.save(function(error, successData) {
-		if (error) {
-			res.json({message: "unable to create artwork"});
-		}
-		else {
-			res.json({
-				message: "created artwork",
-				data: successData
-			});
-		}
-	})
+	
 });
 
 artworkIdRoute.put(function(req, res) {
@@ -305,7 +318,6 @@ userRoute.delete(function(req, res) {  //done
 });
 
 router.route("/login").post(passport.authenticate("local-login"), function(req, res){
-	console.log(req.user);
 	res.json({ id: req.user.id, name: req.user.name });
 })
 
