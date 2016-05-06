@@ -102,7 +102,7 @@ artworkIdRoute.get(function(req, res) {
 			res.json({message: "could not find artwork"});
 		}
 		else {
-			res.json(doc);
+			res.json({message: "success", data: doc});
 		}
 	})
 });
