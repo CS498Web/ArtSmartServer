@@ -18,7 +18,7 @@ var uuid         = require('node-uuid');
 var secrets      = require('./config/secrets.js'); 
 
 //configuration of database
-mongoose.connect('mongodb://artsmart:artsmart@ds011251.mlab.com:11251/artsmart');
+mongoose.connect('mongodb://' + secrets.MLAB.username + ':' + secrets.MLAB.password + '@ds011251.mlab.com:11251/artsmart');
 
 //set up the express application
 app.use(morgan('dev'));
